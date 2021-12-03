@@ -45,7 +45,8 @@
                     method: 'POST',
                     body: new URLSearchParams({
                         token: token
-                    })
+                    }),
+                    mode: 'no-cors',
                 }));
                 console.log(token);
                 window.location = '<%= successUrl %>';
