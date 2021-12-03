@@ -9,7 +9,8 @@ module.exports = new ExpressOIDC({
     scope: 'openid profile',
     routes: {
         loginCallback: {
-            path: '/callback'
+            path: '/callback',
+            afterCallback: '/success'
         }
     }
 });

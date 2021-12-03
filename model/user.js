@@ -1,14 +1,13 @@
 const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema({
-  userId: {
-    type: Number,
-    required: true
-  },
-  authStat: {
-    type: Array,
-    default: []
-  }
+    id: {
+        type: String,
+        required: true
+    },
+    authorizedApps: {
+        type: [String]
+    }
 });
 
 module.exports = mongoose.model("User", userSchema);

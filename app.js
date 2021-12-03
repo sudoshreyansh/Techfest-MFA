@@ -5,9 +5,8 @@ const app = express();
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 
-const authRouter = require('./routes/auth');
-const globalRouter = require('./routes/global');
-const oidc = require('./routes/oidc');
+const mongoose = require('mongoose');
+mongoose.connect(process.env.MONGODB_URI);
 
 const store = new MongoDBStore({
     uri: process.env.MONGODB_URI,
@@ -18,10 +17,13 @@ store.on('error', err => {
     console.log(err);
 });
 
+app.set('view engine', 'ejs');
+app.set('etag', false);
+
 app.use(session({
     secret: process.env.SESSION_SECRET,
     cookie: {
-        sameSite: 'strict',
+        sameSite: 'lax',
         httpOnly: true,
         expires: 1*24*60*60*1000
     },
@@ -30,8 +32,12 @@ app.use(session({
     saveUninitialized: false
 }));
 
-app.use(authRouter);
+const authRouter = require('./routes/auth');
+const globalRouter = require('./routes/global');
+const oidc = require('./routes/oidc');
+
 app.use(oidc.router);
+app.use(authRouter);
 app.use(globalRouter);
 
 oidc.on('error', err => {
