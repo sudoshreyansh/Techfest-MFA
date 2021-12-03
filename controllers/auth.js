@@ -29,7 +29,7 @@ async function login (req, res) {
         ) {
             res.redirect('/login');
         } else {
-            res.redirect('/success');
+            res.redirect('/authorize');
         }
     } else {
         res.send('Invalid Request');
@@ -54,19 +54,40 @@ async function success(req, res) {
         });
 
         if ( !app ) {
-            res.send('There was an issue. Please try again later.');
+            res.render('index', {
+                title: 'An error occured',
+                description: 'There was an issue. Please try again.',
+                script: 'none'
+            });
             return;
         }
 
         if ( user.authorizedApps.includes(app.id) ) {
-            delete req.session.authState;
-            res.redirect(app.successUrl);
+            req.session.authState = 2;
+            res.render('index', {
+                title: 'Logging In',
+                description: 'Please wait while we log you in...',
+                script: 'login',
+                successUrl: app.successUrl
+            });
         } else {
             req.session.authState = 2;
-            res.send(`Do you wish to continue to ${app.name} with ${req.userContext.userinfo.preferred_username}`);
+            let email = req.userContext.userinfo.preferred_username;
+            email = email.split('@');
+            email = email[0].slice(0, 3) + '****@' + email[1].slice(email[1].length - 5);
+            res.render('index', {
+                title: 'Authorize App',
+                description: `Do you wish to authorize <b>${app.name}</b> as <b>${email}</b>`,
+                script: 'login-with-cta',
+                successUrl: app.successUrl
+            });
         }
     } else {
-        res.send('Invalid request');
+        res.render('index', {
+            title: 'Invalid Request',
+            description: 'There was an issue. Please try again.',
+            script: 'none'
+        });
     }
 }
 
@@ -81,7 +102,7 @@ async function successCallback(req, res) {
         });
 
         if ( !user || !app ) {
-            res.send('There was an issue. Please try again later.');
+            res.send('0');
             return;
         }
 
@@ -90,10 +111,10 @@ async function successCallback(req, res) {
 
         let payload = {
             userInfo: {
-                id: req.userContext.userInfo.sub,
-                email: req.userContext.userInfo.preferred_username,
-                firstName: req.userContext.userInfo.first_name,
-                familyName: req.userContext.userInfo.family_name
+                id: req.userContext.userinfo.sub,
+                email: req.userContext.userinfo.preferred_username,
+                firstName: req.userContext.userinfo.given_name,
+                familyName: req.userContext.userinfo.family_name
             },
             mfa: (req.session.sensitive === 'true') ? true : false,
             appId: req.session.appId,

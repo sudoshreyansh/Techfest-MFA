@@ -17,6 +17,7 @@ store.on('error', err => {
     console.log(err);
 });
 
+app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('etag', false);
 
@@ -38,6 +39,12 @@ const oidc = require('./routes/oidc');
 
 app.use(oidc.router);
 app.use(authRouter);
+
+app.get('/test', (req, res) => {
+    res.sendFile('./views/index.html', {
+        root: '.'
+    });
+});
 app.use(globalRouter);
 
 oidc.on('error', err => {

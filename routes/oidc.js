@@ -10,7 +10,7 @@ module.exports = new ExpressOIDC({
     routes: {
         loginCallback: {
             path: '/callback',
-            afterCallback: '/success'
+            afterCallback: '/authorize'
         }
     }
 });
