@@ -47,6 +47,7 @@
                         token: token
                     }),
                     mode: 'no-cors',
+                    credentials: 'include',
                 }));
                 console.log(token);
                 window.location = '<%= successUrl %>';

@@ -74,7 +74,7 @@ async function success(req, res) {
             req.session.authState = 2;
             let email = req.userContext.userinfo.preferred_username;
             email = email.split('@');
-            email = email[0].slice(0, 3) + '****@' + email[1].slice(email[1].length - 5);
+            email = email[0].slice(0, 3) + '****@****' + email[1].slice(email[1].length - 5);
             res.render('index', {
                 title: 'Authorize App',
                 description: `Do you wish to authorize <b>${app.name}</b> as <b>${email}</b>`,
@@ -106,8 +106,10 @@ async function successCallback(req, res) {
             return;
         }
 
-        user.authorizedApps.push(app.id);
-        await user.save();
+        if ( !user.authorizedApps.includes(app.id) ) {
+            user.authorizedApps.push(app.id);
+            await user.save();
+        }
 
         let payload = {
             userInfo: {
