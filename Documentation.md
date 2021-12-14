@@ -76,6 +76,7 @@ https://developer.okta.com/docs/reference/api/sessions/#session-object
 
 **Request:**
 ```js
+req:
 {
     userId: string,
     otp: string
@@ -96,6 +97,7 @@ https://developer.okta.com/docs/reference/api/sessions/#session-object
 
 **Request:**
 ```js
+req:
 {
     sessionId: string;
 }
