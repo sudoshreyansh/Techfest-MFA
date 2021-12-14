@@ -1,5 +1,7 @@
 All data is transmitted in the form of JSON.
 
+# Authentication
+
 ### `POST` : /api/register
 
 **Description:** Creates a new user in the Okta Global Directory and then enrolls the user with Email Multi-Factor Authentication on the same email. It generates an OTP sent via email to confirm the email address. The OTP remains valid for 5 mins.
@@ -39,7 +41,7 @@ All data is transmitted in the form of JSON.
 
 ```js
 {
-    success: true
+    success: Boolean
 }
 ```
 
@@ -86,7 +88,7 @@ req:
 
 ```js
 {
-    success: true
+    success: Boolean
 }
 ```
 
@@ -106,7 +108,7 @@ req:
 
 ```js
 {
-    success: true
+    success: Boolean
 }
 ```
 
@@ -121,7 +123,39 @@ sessionId: string
 **Response:**<br>
 https://developer.okta.com/docs/reference/api/users/#user-object
 
-### Errors
+# Single Sign-On
+
+### `POST` : /api/sso/generate
+
+**Description:** Generates an ID token of the session's user for SSO. The ID token is a JWT, with the user's profile as the payload. It expires in 10 hrs. The token is encrypted using HS256 algorithm.
+
+```js
+{
+    sessionId: string
+}
+```
+
+**Response:**<br>
+```js
+{
+    token: string
+}
+```
+
+### `POST` : /api/sso/verify
+
+**Description:** Verifies the ID token, and returns the decoded payload.
+
+```js
+{
+    token: string
+}
+```
+
+**Response:**<br>
+`profile` of the User object from Okta
+
+# Errors
 
 In case of any errors either from the microservice or from Okta, an error object is returned.
 

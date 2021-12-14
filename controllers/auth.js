@@ -1,6 +1,7 @@
 const oktaClient = require('./okta');
 const Joi = require('joi');
 const errorHandler = require('../util/errorHandler');
+const jwt = require('../util/jwt');
 
 const registerSchema = new Joi.object({
     firstName: Joi.string().required(),
@@ -26,6 +27,10 @@ const loginSchema = new Joi.object({
 
 const sessionSchema = new Joi.object({
     sessionId: Joi.string().required()
+});
+
+const tokenSchema = new Joi.object({
+    token: Joi.string().required()
 });
 
 function findFactor(type, collection) {
@@ -190,11 +195,41 @@ async function logout(req, res) {
     }
 }
 
+async function generateSSO(req, res) {
+    try {
+        const validatedBody = await sessionSchema.validateAsync(req.body);
+
+        let session = await oktaClient.getSession(validatedBody.sessionId);
+        let user = await oktaClient.getUser(session.userId);
+
+        let token = await jwt.sign(user.profile);
+        res.json({
+            token
+        });
+    } catch ( error ) {
+        res.json( errorHandler( error ) );
+    }
+}
+
+async function verifySSO(req, res) {
+    try {
+        const validatedBody = await tokenSchema.validateAsync(req.body);
+
+        let token = validatedBody.token;
+        let profile = await jwt.verify(token);
+        req.json(profile);
+    } catch ( error ) {
+        res.json( errorHandler( error ) );
+    }
+}
+
 module.exports = {
     register,
     login,
     activate,
     verifyMFA,
     logout,
-    getUserFromSession
+    getUserFromSession,
+    generateSSO,
+    verifySSO
 };
