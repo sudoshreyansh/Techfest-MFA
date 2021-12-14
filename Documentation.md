@@ -53,6 +53,7 @@ otp: string
 Description: Used to distroy the user session for the application and Logout
 
 ```js
+req:
 {
   sessionId: string;
 }
@@ -63,6 +64,7 @@ Description: Used to distroy the user session for the application and Logout
 Description: Used to get the user data from the OKTA server
 
 ```js
+req:
 {
   sessionId: string;
 }
