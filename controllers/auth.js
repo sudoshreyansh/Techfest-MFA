@@ -1,4 +1,27 @@
 const oktaClient = require('./okta');
+const Joi = require('joi');
+
+const registerSchema = new Joi.object({
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string()
+});
+
+const activationSchema = new Joi.object({
+    userId: Joi.string().required(),
+    otp: Joi.string()
+});
+
+const verificationSchema = new Joi.object({
+    userId: Joi.string().required(),
+    otp: Joi.string()
+});
+
+const loginSchema = new Joi.object({
+    email: Joi.string().required(),
+    password: Joi.string().required()
+});
 
 function findFactor(type, collection) {
     return new Promise((resolve, reject) => {
@@ -8,36 +31,49 @@ function findFactor(type, collection) {
             }
         });
     });
-} 
+}
+
+async function enrollMFA(userId, email) {
+    let factor = {
+        factorType: 'email',
+        provider: 'OKTA',
+        profile: {
+            email: email
+        }
+    };
+    await oktaClient.enrollFactor(userId, factor);
+}
 
 async function register(req, res) {
     try {
+        const validatedBody = await registerSchema.validateAsync(req.body);
+
         let user = {
             profile: {
-                firstName: req.body.firstName,
-                lastName: req.body.lastName,
-                email: req.body.email,
-                login: req.body.email,
+                firstName: validatedBody.firstName,
+                lastName: validatedBody.lastName,
+                email: validatedBody.email,
+                login: validatedBody.email,
             },
             credentials: {
                 password: {
-                    value: req.body.password
+                    value: validatedBody.password
                 }
             }
         };
-    
+
         user = await oktaClient.createUser(user, {
-            activate: false
+            activate: true
         });
-        
-        await user.activate({
-            sendEmail: true
-        });
+
+        await enrollMFA(user.id, validatedBody.email);
     
         res.json({
-            success: true
+            success: true,
+            userId: user.id
         });
     } catch ( error ) {
+        console.log(error);
         res.json({
             success: false,
             error: error.errorCauses[0] ? error.errorCauses[0].summary : error.errorSummary
@@ -47,21 +83,35 @@ async function register(req, res) {
 
 async function login(req, res) {
     try {
+        const validatedBody = await loginSchema.validateAsync(req.body);
+
         let authResponse = await oktaClient.http.postJson(`${oktaClient.baseUrl}/api/v1/authn`, {
             body: {
-                username: req.body.username,
-                password: req.body.password
+                username: validatedBody.email,
+                password: validatedBody.password
             }
         });
-    
-        let session = await oktaClient.createSession({
-            sessionToken: authResponse.sessionToken
-        });
-        res.json({
-            success: true,
-            ...session
-        });
+        
+        let userId = authResponse._embedded.user.id;
+        let factors = await oktaClient.listFactors(userId);
+        let emailFactor = await findFactor('email', factors);
+        
+        if ( emailFactor.status !== 'ACTIVE' ) {
+            res.json({
+                success: true,
+                userId
+            });
+        } else {
+            let session = await oktaClient.createSession({
+                sessionToken: authResponse.sessionToken
+            });
+            res.json({
+                success: true,
+                ...session
+            });
+        }
     } catch (error) {
+        console.log(error);
         res.json({
             success: false,
             error: error.errorCauses[0] ? error.errorCauses[0].summary : error.errorSummary
@@ -69,39 +119,30 @@ async function login(req, res) {
     }
 }
 
-async function enrollMFA(req, res) {
-    let factor = {
-        factorType: 'email',
-        provider: 'OKTA',
-        profile: {
-            email: req.body.email
+async function activate(req, res) {
+    try {
+        const validatedBody = await activationSchema.validateAsync(req.body);
+
+        if ( !validatedBody.otp ) {
+            let user = await oktaClient.getUser(validatedBody.userId);
+            await enrollMFA(user.id, user.profile.email);
+            res.json({
+                success: true
+            });
+            return;
         }
-    };
-    
-    try {
-        let userFactor = await oktaClient.enrollFactor(req.body.userId, factor);
-        res.json({
-            success: true
-        });
-    } catch ( error ) {
-        res.json({
-            success: false
-        });
-    }
-}
+        
+        let factors = await oktaClient.listFactors(validatedBody.userId);
+        let emailFactor = await findFactor('email', factors);
 
-async function activateMFA(req, res) {
-    let factors = await oktaClient.listFactors(req.body.userId);
-    let emailFactor = await findFactor('email', factors);
-
-    try {
-        await oktaClient.activateFactor(req.body.userId, emailFactor.id, {
-            passCode: req.body.otp
+        await oktaClient.activateFactor(validatedBody.userId, emailFactor.id, {
+            passCode: validatedBody.otp
         });
         res.json({
             success: true
         });
     } catch ( error ) {
+        console.log(error);
         res.json({
             success: false
         });
@@ -109,22 +150,25 @@ async function activateMFA(req, res) {
 }
 
 async function verifyMFA(req, res) {
-    let factors = await oktaClient.listFactors(req.body.userId);
-    let emailFactor = await findFactor('email', factors);
-    
     try {
-        if ( req.body.otp ) {
-            await emailFactor.verify(req.body.userId, {
-                passCode: req.body.otp
+        const validatedBody = await verificationSchema.validateAsync(req.body);
+
+        let factors = await oktaClient.listFactors(validatedBody.userId);
+        let emailFactor = await findFactor('email', factors);
+
+        if ( validatedBody.otp ) {
+            await emailFactor.verify(validatedBody.userId, {
+                passCode: validatedBody.otp
             });
         } else {
-            await emailFactor.verify(req.body.userId);
+            await emailFactor.verify(validatedBody.userId);
         }
 
         res.json({
             success: true
         });
     } catch ( error ) {
+        console.log(error);
         res.json({
             success: false
         });
@@ -134,7 +178,6 @@ async function verifyMFA(req, res) {
 module.exports = {
     register,
     login,
-    enrollMFA,
-    activateMFA,
+    activate,
     verifyMFA
 };

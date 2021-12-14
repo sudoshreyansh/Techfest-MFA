@@ -4,8 +4,7 @@ const controller = require('../controllers/auth');
 
 router.post('/register', controller.register);
 router.post('/login', controller.login);
-router.post('/mfa/enroll', controller.enrollMFA);
-router.post('/mfa/activate', controller.activateMFA);
+router.post('/activate', controller.activate);
 router.post('/mfa/verify', controller.verifyMFA);
 
 module.exports = router;
