@@ -97,7 +97,6 @@ req:
 
 **Request:**
 ```js
-req:
 {
     sessionId: string;
 }
