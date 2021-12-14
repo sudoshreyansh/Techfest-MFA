@@ -23,6 +23,10 @@ const loginSchema = new Joi.object({
     password: Joi.string().required()
 });
 
+const sessionSchema = new Joi.object({
+    sessionId: Joi.string().required()
+});
+
 function findFactor(type, collection) {
     return new Promise((resolve, reject) => {
         collection.each(factor => {
@@ -69,7 +73,6 @@ async function register(req, res) {
         await enrollMFA(user.id, validatedBody.email);
     
         res.json({
-            success: true,
             userId: user.id
         });
     } catch ( error ) {
@@ -98,20 +101,15 @@ async function login(req, res) {
         
         if ( emailFactor.status !== 'ACTIVE' ) {
             res.json({
-                success: true,
                 userId
             });
         } else {
             let session = await oktaClient.createSession({
                 sessionToken: authResponse.sessionToken
             });
-            res.json({
-                success: true,
-                ...session
-            });
+            res.json(session);
         }
     } catch (error) {
-        console.log(error);
         res.json({
             success: false,
             error: error.errorCauses[0] ? error.errorCauses[0].summary : error.errorSummary
@@ -142,7 +140,6 @@ async function activate(req, res) {
             success: true
         });
     } catch ( error ) {
-        console.log(error);
         res.json({
             success: false
         });
@@ -168,7 +165,35 @@ async function verifyMFA(req, res) {
             success: true
         });
     } catch ( error ) {
-        console.log(error);
+        res.json({
+            success: false
+        });
+    }
+}
+
+async function getUserFromSession(req, res) {
+    try {
+        const validatedBody = await sessionSchema.validateAsync(req.body);
+
+        let session = await oktaClient.getSession(validatedBody.sessionId);
+        let user = await oktaClient.getUser(session.userId);
+        res.json(user);
+    } catch ( error ) {
+        res.json({
+            success: false
+        });
+    }
+}
+
+async function logout(req, res) {
+    try {
+        const validatedBody = await sessionSchema.validateAsync(req.body)
+
+        await oktaClient.endSession(validatedBody.sessionId);
+        res.json({
+            success: true
+        });
+    } catch ( error ) {
         res.json({
             success: false
         });
@@ -179,5 +204,7 @@ module.exports = {
     register,
     login,
     activate,
-    verifyMFA
+    verifyMFA,
+    logout,
+    getUserFromSession
 };
