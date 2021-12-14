@@ -1,69 +1,142 @@
-### POST : /register
+All data is transmitted in the form of JSON.
 
-Description : This EndPoint will create a new Activated user and enroll into Multi-Factor Authentication
+### `POST` : /api/register
 
+**Description:** Creates a new user in the Okta Global Directory and then enrolls the user with Email Multi-Factor Authentication on the same email. It generates an OTP sent via email to confirm the email address. The OTP remains valid for 5 mins.
+
+**Request:**
 ```js
-req :
 {
     firstName: string,
     lastName: string,
-    email: string (email),
+    email: string,
     password: string
 }
 ```
 
-### POST : /activate
-
-Description: Used to activate the Multi-Factor Authentication and verify the user email using OTP
-
-```js
-req :
-{
-userId: string,
-otp: string
-}
-```
-
-### POST : /login
-
-Description: This end point will login the user and Create a session to users application. In case factor is not Activated the User will receive the UserID
-
-```js
-req :
-{
-email: string(email),
-password: string
-}
-```
-
-### POST : /MFA/verify
-
-Description: Used to verify the user on the Application using OTP sent to the registered email Id
-
-```js
-req :
-{
-userId: string,
-otp: string
-}
-```
-
-### POST : /logout
-
-Description: Used to distroy the user session for the application and Logout
+**Response:**
 
 ```js
 {
-  sessionId: string;
+    userId: string
 }
 ```
 
-### GET : /user
 
-Description: Used to get the user data from the OKTA server
+### `POST` : /api/activate
+
+**Description:** Verifies the OTP sent during MFA enrollment, and activates Multi-Factor Authentication. If the request is sent without `otp`, it re-enrolls the user with the MFA and resends the OTP.
+
+**Request:**
+```js
+{
+    userId: string,
+    otp: string
+}
+```
+
+**Response:**
 
 ```js
 {
-  sessionId: string;
+    success: true
 }
 ```
+
+### `POST` : /api/login
+
+**Description:** It verifies the user credentials, and returns a session. In case the user has not verified the email through the OTP sent during MFA enrollment, instead of session details, the user id is returned.
+
+**Request:**
+```js
+{
+    email: string,
+    password: string
+}
+```
+
+
+**Response:**
+
+MFA is not activated:<br>
+```js
+{
+    userId: string
+}
+```
+
+MFA activated:<br>
+https://developer.okta.com/docs/reference/api/sessions/#session-object
+
+
+
+### `POST` : /api/mfa/verify
+
+**Description:** Used for Multi-Factor Authentication. If sent without `otp`, it sends an OTP to the registered email. If `otp` is present, it verifies the OTP.
+
+**Request:**
+```js
+{
+    userId: string,
+    otp: string
+}
+```
+**Response:**
+
+```js
+{
+    success: true
+}
+```
+
+
+### `POST` : /api/logout
+
+**Description:** Destroys the session with the `sessionId`
+
+**Request:**
+```js
+{
+    sessionId: string;
+}
+```
+
+**Response:**
+
+```js
+{
+    success: true
+}
+```
+
+### `GET` : /api/user
+
+**Description:** Returns the user data of the user belonging to the session.
+
+```js
+sessionId: string
+```
+
+**Response:**<br>
+https://developer.okta.com/docs/reference/api/users/#user-object
+
+### Errors
+
+In case of any errors either from the microservice or from Okta, an error object is returned.
+
+**Error Object:**
+```js
+{
+    error: "ERROR_CODE",
+    ....
+}
+```
+
+The possible `error` values:
+- `VALIDATION_ERROR`: The request data passed is invalid. More helpful details from Joi validator are added.
+
+- `OKTA_ERROR`: The error is an error from the Okta API / SDK. The Okta error object is added to the object.
+
+- `SERVER_ERROR`: Any unknown server error occured.
+
+- `404`: Endpoint doesn't exist
