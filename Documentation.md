@@ -153,7 +153,8 @@ https://developer.okta.com/docs/reference/api/users/#user-object
 ```
 
 **Response:**<br>
-`profile` of the User object from Okta
+`profile` of the User object from Okta: https://developer.okta.com/docs/reference/api/users/#user-object
+
 
 # Errors
 
