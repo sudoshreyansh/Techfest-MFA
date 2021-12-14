@@ -1,5 +1,6 @@
 const oktaClient = require('./okta');
 const Joi = require('joi');
+const errorHandler = require('../util/errorHandler');
 
 const registerSchema = new Joi.object({
     firstName: Joi.string().required(),
@@ -76,7 +77,6 @@ async function register(req, res) {
             userId: user.id
         });
     } catch ( error ) {
-        console.log(error);
         res.json({
             success: false,
             error: error.errorCauses[0] ? error.errorCauses[0].summary : error.errorSummary
@@ -110,10 +110,8 @@ async function login(req, res) {
             res.json(session);
         }
     } catch (error) {
-        res.json({
-            success: false,
-            error: error.errorCauses[0] ? error.errorCauses[0].summary : error.errorSummary
-        });
+        console.log(error.name, typeof error);
+        res.json( errorHandler( error ) );
     }
 }
 
@@ -140,9 +138,7 @@ async function activate(req, res) {
             success: true
         });
     } catch ( error ) {
-        res.json({
-            success: false
-        });
+        res.json( errorHandler( error ) );
     }
 }
 
@@ -165,9 +161,7 @@ async function verifyMFA(req, res) {
             success: true
         });
     } catch ( error ) {
-        res.json({
-            success: false
-        });
+        res.json( errorHandler( error ) );
     }
 }
 
@@ -179,9 +173,7 @@ async function getUserFromSession(req, res) {
         let user = await oktaClient.getUser(session.userId);
         res.json(user);
     } catch ( error ) {
-        res.json({
-            success: false
-        });
+        res.json( errorHandler( error ) );
     }
 }
 
@@ -194,9 +186,7 @@ async function logout(req, res) {
             success: true
         });
     } catch ( error ) {
-        res.json({
-            success: false
-        });
+        res.json( errorHandler( error ) );
     }
 }
 
