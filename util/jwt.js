@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const secret = process.env.JWT_SECRET;
 
 module.exports.sign = ( payload ) => {
+    payload = {
+        ...payload
+    };
     return new Promise((resolve, reject) => {
         jwt.sign(payload, secret, {
             algorithm: 'HS256',

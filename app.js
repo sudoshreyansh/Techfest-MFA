@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 
 const router = require('./routes/auth');
 app.use('/api/', router);
-app.all('*', () => res.json({
+app.all('*', (req, res) => res.json({
     error: '404'
 }));
 

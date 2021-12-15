@@ -120,7 +120,6 @@ async function login(req, res) {
             res.json(session);
         }
     } catch (error) {
-        console.log(error.name, typeof error);
         res.json( errorHandler( error ) );
     }
 }
@@ -242,7 +241,7 @@ async function verifyToken(req, res) {
         let token = validatedBody.token;
         let profile = await jwt.verify(token);
         
-        req.json(profile);
+        res.json(profile);
     } catch ( error ) {
         res.json( errorHandler( error ) );
     }
