@@ -2,6 +2,7 @@ const oktaClient = require('./okta');
 const Joi = require('joi');
 const errorHandler = require('../util/errorHandler');
 const jwt = require('../util/jwt');
+const authCode = require('../util/authCode');
 
 const registerSchema = new Joi.object({
     firstName: Joi.string().required(),
@@ -31,6 +32,10 @@ const sessionSchema = new Joi.object({
 
 const tokenSchema = new Joi.object({
     token: Joi.string().required()
+});
+
+const codeSchema = new Joi.object({
+    code: Joi.string().required()
 });
 
 function findFactor(type, collection) {
@@ -195,14 +200,33 @@ async function logout(req, res) {
     }
 }
 
-async function generateSSO(req, res) {
+async function generateGrant(req, res) {
     try {
         const validatedBody = await sessionSchema.validateAsync(req.body);
 
         let session = await oktaClient.getSession(validatedBody.sessionId);
-        let user = await oktaClient.getUser(session.userId);
+        let code = await authCode.generate(session.userId);
 
+        res.json({
+            code
+        });
+    } catch ( error ) {
+        res.json( errorHandler( error ) );
+    }
+}
+
+async function generateToken(req, res) {
+    try {
+        const validatedBody = await codeSchema.validateAsync(req.body);
+
+        let grant = await authCode.verify(validatedBody.code);
+        if ( !grant ) {
+            throw new Error('Invalid or expired grant');
+        }
+
+        let user = await oktaClient.getUser(grant.i);
         let token = await jwt.sign(user.profile);
+
         res.json({
             token
         });
@@ -211,12 +235,13 @@ async function generateSSO(req, res) {
     }
 }
 
-async function verifySSO(req, res) {
+async function verifyToken(req, res) {
     try {
         const validatedBody = await tokenSchema.validateAsync(req.body);
 
         let token = validatedBody.token;
         let profile = await jwt.verify(token);
+        
         req.json(profile);
     } catch ( error ) {
         res.json( errorHandler( error ) );
@@ -230,6 +255,7 @@ module.exports = {
     verifyMFA,
     logout,
     getUserFromSession,
-    generateSSO,
-    verifySSO
+    generateToken,
+    verifyToken,
+    generateGrant
 };

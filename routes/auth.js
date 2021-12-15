@@ -10,7 +10,8 @@ router.post('/logout', controller.logout);
 
 router.get('/user', controller.getUserFromSession);
 
-router.post('/sso/generate', controller.generateSSO);
-router.post('/sso/verify', controller.verifySSO);
+router.post('/sso/grant', controller.generateGrant);
+router.post('/sso/token', controller.generateToken);
+router.post('/sso/verify', controller.verifyToken);
 
 module.exports = router;

@@ -125,13 +125,30 @@ https://developer.okta.com/docs/reference/api/users/#user-object
 
 # Single Sign-On
 
-### `POST` : /api/sso/generate
+### `POST` : /api/sso/grant
 
-**Description:** Generates an ID token of the session's user for SSO. The ID token is a JWT, with the user's profile as the payload. It expires in 10 hrs. The token is encrypted using HS256 algorithm.
+**Description:** Generates an authorization code which acts as the authorization grant while implementing Single Sign-On based on the OpenID Connect Authorization Code Flow.
 
 ```js
 {
     sessionId: string
+}
+```
+
+**Response:**<br>
+```js
+{
+    code: string
+}
+```
+
+### `POST` : /api/sso/token
+
+**Description:** Generates an ID token of the user corresponding to the Authorization Grant for SSO. The ID token is a JWT, with the user's profile as the payload. It expires in 10 hrs. The token is encrypted using HS256 algorithm.
+
+```js
+{
+    code: string
 }
 ```
 
@@ -144,7 +161,7 @@ https://developer.okta.com/docs/reference/api/users/#user-object
 
 ### `POST` : /api/sso/verify
 
-**Description:** Verifies the ID token, and returns the decoded payload.
+**Description:** Verifies the ID token, and returns the decoded user's profile.
 
 ```js
 {
