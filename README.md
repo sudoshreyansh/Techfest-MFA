@@ -1,9 +1,11 @@
 # Authentication Microservice using Okta
 
-This microservice sits between the application servers and Okta to provide a unified point of failure and bring in uniformity in using Okta as the authentication provider. Along with simple authentication, it also supports:
+This microservice provides authentication services to applications using Okta as its provider.  <br />
+Along with basic authentication, it supports:
 
 - [x] Multi-factor authentication using OTPs.
 - [x] Single sign-on
+
 
 [You can find the API documentation here.](https://github.com/sudoshreyansh/mfa-microservice/blob/main/Documentation.md)<br />
 To view an example SSO server, developed using this microservice: [Check this repo!](https://github.com/sudoshreyansh/mfa-sso-server)
@@ -21,3 +23,8 @@ PORT=<preferred port>
 
 and then run `node app.js` to run the microservice.
 
+## Tech Stack
+
+- Node JS
+- Express JS
+- OKTA SDK
